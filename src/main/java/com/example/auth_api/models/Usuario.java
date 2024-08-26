@@ -1,13 +1,25 @@
 package com.example.auth_api.models;
 
+import com.example.auth_api.enums.RoleEnum;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.List;
+
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "TB_USUARIO")
-public class Usuario {
+public class Usuario implements UserDetails {
 
     @Id
     @GeneratedValue
@@ -16,9 +28,7 @@ public class Usuario {
     private String login;
     private String senha;
 
-    public Usuario() {
-
-    }
+    private RoleEnum role;
 
     public Usuario(String nome, String login, String senha) {
         this.nome = nome;
@@ -26,40 +36,39 @@ public class Usuario {
         this.senha = senha;
     }
 
-    public Long getId() {
-        return id;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public String getPassword() {
+        return this.senha;
     }
 
-    public String getNome() {
-        return nome;
+    @Override
+    public String getUsername() {
+        return this.login;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    //Não terá ultilidade
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
 
-    public String getLogin() {
-        return login;
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
     }
 
-    public String getSenha() {
-        return senha;
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-
-
-
-
 }
