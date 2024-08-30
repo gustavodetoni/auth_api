@@ -1,4 +1,11 @@
 package com.example.auth_api.dtos;
 
-public record UsuarioDto(String nome, String login, String senha) {
+import com.example.auth_api.enums.RoleEnum;
+
+public record UsuarioDto(
+        String nome,
+        String login,
+        String senha,
+        RoleEnum role
+        ) {
 }
