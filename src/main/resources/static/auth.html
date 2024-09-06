@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticação JWT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background-color: #e0e0e0;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 4px;
+        }
+   .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #loginStatus {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="tabs">
+        <div class="tab" onclick="showTab('cadastro')">Cadastro</div>
+        <div class="tab" onclick="showTab('login')">Login</div>
+        <div class="tab" onclick="showTab('verificar')">Verificar Token</div>
+    </div>
+
+    <div id="cadastro" class="tab-content">
+        <input type="text" id="nome" placeholder="Nome">
+        <input type="text" id="username" placeholder="Login">
+        <input type="password" id="senha" placeholder="Senha">
+        <select id="role">
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+        </select>
+        <button onclick="cadastrar()">Cadastrar</button>
+    </div>
+
+    <div id="login" class="tab-content">
+        <input type="text" id="loginUsername" placeholder="Login">
+        <input type="password" id="loginSenha" placeholder="Senha">
+        <button id="loginButton" onclick="login()">Login</button>
+        <div id="loginStatus"></div>
+    </div>
+
+    <div id="verificar" class="tab-content">
+        <button onclick="verificarToken('user')">Verificar Acesso de Usuário</button>
+        <button onclick="verificarToken('admin')">Verificar Acesso de Admin</button>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    let token = '';
+
+    function showTab(tabName) {
+    document.getElementById('result').innerText = '';
+
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    document.querySelector(`.tab:nth-child(${['cadastro', 'login', 'verificar'].indexOf(tabName) + 1})`).classList.add('active');
+}
+
+    function cadastrar() {
+        const nome = document.getElementById('nome').value;
+        const login = document.getElementById('username').value;
+        const senha = document.getElementById('senha').value;
+        const role = document.getElementById('role').value;
+
+        fetch('/usuarios', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nome, login, senha, role }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro no servidor: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('result').innerText = 'Usuário cadastrado com sucesso!\n' + JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+            document.getElementById('result').innerText = 'Erro ao cadastrar: ' + error.message;
+        });
+    }
+
+    function login() {
+    const loginButton = document.getElementById('loginButton');
+    const loginStatus = document.getElementById('loginStatus');
+    const login = document.getElementById('loginUsername').value;
+    const senha = document.getElementById('loginSenha').value;
+
+    loginButton.classList.add('loading');
+    loginButton.disabled = true;
+    loginStatus.style.display = 'none';
+
+    fetch('/auth', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ login, senha }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Erro no servidor: ' + response.status);
+        }
+        return response.text();  // Alterado para `text()`
+    })
+    .then(data => {
+        token = data;  // Como agora é uma string, atribuímos diretamente
+        loginStatus.innerText = 'Login bem-sucedido!';
+        loginStatus.classList.add('success');
+        loginStatus.classList.remove('error');
+        loginStatus.style.display = 'block';
+    })
+    .catch(error => {
+        loginStatus.innerText = 'Erro ao fazer login: ' + error.message;
+        loginStatus.classList.add('error');
+        loginStatus.classList.remove('success');
+        loginStatus.style.display = 'block';
+    })
+    .finally(() => {
+        loginButton.classList.remove('loading');
+        loginButton.disabled = false;
+    });
+}
+
+    function verificarToken(tipo) {
+        if (!token) {
+            document.getElementById('result').innerText = 'Faça login primeiro para obter um token.';
+            return;
+        }
+
+        fetch(`/usuarios/${tipo}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro no servidor: ' + response.status);
+            }
+            return response.text();
+        })
+        .then(data => {
+            document.getElementById('result').innerText = data;
+        })
+        .catch(error => {
+            document.getElementById('result').innerText = `Esse úsuario não é um admin `;
+        });
+    }
+
+    showTab('cadastro');
+</script>
+</body>
+</html>
